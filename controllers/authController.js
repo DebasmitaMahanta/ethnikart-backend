@@ -74,7 +74,13 @@ export const login = async (req, res) => {
 
   res.json({
     success: true,
-    message: "Login Successful"
+    message: "Login Successful",
+    user: {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,   // very important for admin check
+    }
   });
 
 };
