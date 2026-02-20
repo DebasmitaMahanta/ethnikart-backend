@@ -1,31 +1,58 @@
 import express from "express";
+import upload from "../middleware/upload.js";
+import { isAuthenticated } from "../middleware/authMiddleware.js";
+
 import {
   addProduct,
   getProducts,
-  deleteProduct
+  getSingleProduct,
+  updateProduct,
+  deleteProduct,
+  addReview
 } from "../controllers/productController.js";
-import upload from "../middleware/uploadMiddleware.js";
-import { isAuthenticated } from "../middleware/authMiddleware.js";
-import { isAdmin } from "../middleware/adminMiddleware.js";
+
 const router = express.Router();
 
-// Public
-router.get("/", getProducts);
 
-// Admin
+// ➕ CREATE PRODUCT (admin only)
 router.post(
-  "/add",
-  isAuthenticated,
-  isAdmin,
-  upload.single("image"),
+  "/",
+  isAuthenticated,               // 🔐 check login
+  upload.fields([
+    { name: "productImages", maxCount: 10 },
+    { name: "thumbnails", maxCount: 3 },
+  ]),
   addProduct
 );
 
-router.delete(
-  "/delete/:id",
+
+
+// 📄 GET ALL PRODUCTS (public)
+router.get("/", getProducts);
+
+
+// 🔍 GET SINGLE PRODUCT (public)
+router.get("/:id", getSingleProduct);
+
+
+// ✏️ UPDATE PRODUCT (admin only)
+router.put(
+  "/:id",
   isAuthenticated,
-  isAdmin,
-  deleteProduct
+  upload.fields([
+    { name: "productImages", maxCount: 10 },
+    { name: "thumbnails", maxCount: 3 },
+  ]),
+  updateProduct
 );
+
+
+// ❌ DELETE PRODUCT (admin only)
+router.delete("/:id", isAuthenticated, deleteProduct);
+
+
+// ⭐ ADD REVIEW (logged-in user)
+router.post("/review", isAuthenticated, addReview);
+
 
 export default router;
