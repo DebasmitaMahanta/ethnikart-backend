@@ -1,5 +1,5 @@
 import express from "express";
-import upload from "../middleware/upload.js";
+
 import { isAuthenticated } from "../middleware/authMiddleware.js";
 
 import {
@@ -10,6 +10,7 @@ import {
   deleteProduct,
   addReview
 } from "../controllers/productController.js";
+import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
