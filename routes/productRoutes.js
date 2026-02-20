@@ -19,13 +19,13 @@ const router = express.Router();
 router.post(
   "/",
   isAuthenticated,               // 🔐 check login
+ isAdmin,
   upload.fields([
-    { name: "productImages", maxCount: 10 },
+    { name: "images", maxCount: 10 },
     { name: "thumbnails", maxCount: 3 },
   ]),
   addProduct
 );
-
 
 
 // 📄 GET ALL PRODUCTS (public)

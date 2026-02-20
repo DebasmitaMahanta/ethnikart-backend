@@ -6,17 +6,17 @@ export const addProduct = async (req, res) => {
   try {
     const { name, price, category, description, stock, variants } = req.body;
 
-    // extract uploaded images
+    // get uploaded files
     const productImages =
-      req.files?.productImages?.map(file => file.filename) || [];
+      req.files?.productImages?.map((file) => file.filename) || [];
 
     const thumbnails =
-      req.files?.thumbnails?.map(file => file.filename) || [];
+      req.files?.thumbnails?.map((file) => file.filename) || [];
 
-    // parse variants JSON string
+    // parse variants
     const parsedVariants = variants ? JSON.parse(variants) : [];
 
-    // validation: at least 1 image required
+    // validation
     if (productImages.length === 0) {
       return res.status(400).json({
         success: false,
@@ -41,7 +41,8 @@ export const addProduct = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("Add Product Error:", error);
+
     res.status(500).json({
       success: false,
       message: error.message,
