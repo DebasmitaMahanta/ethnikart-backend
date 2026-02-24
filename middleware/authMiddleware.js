@@ -2,10 +2,12 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
 export const isAuthenticated = async (req, res, next) => {
+   console.log("Cookies received:", req.cookies);
 
   try {
 
     const token = req.cookies.token;
+    
 
     if (!token) {
       return res.status(401).json({
@@ -13,6 +15,7 @@ export const isAuthenticated = async (req, res, next) => {
         message: "Login First"
       });
     }
+     console.log("Token from cookie:", token);
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 

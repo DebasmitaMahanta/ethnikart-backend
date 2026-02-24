@@ -34,9 +34,7 @@ export const register = async (req, res) => {
 
 // Login
 export const login = async (req, res) => {
-
-  const { email, password } = req.body;
-
+    const { email, password } = req.body;
   const user = await User.findOne({ email }).select("+password");
 
   if (!user)
@@ -64,24 +62,26 @@ export const login = async (req, res) => {
     process.env.JWT_SECRET,
     { expiresIn: "1d" }
   );
+  console.log("Sending token in response:", token);
+const isProduction = process.env.NODE_ENV === "production";
 
-  res.cookie("token", token, {
-    httpOnly: true,
-    maxAge: 86400000,
-    secure: true,
-  sameSite: "none",
-  });
-
-  res.json({
-    success: true,
-    message: "Login Successful",
-    user: {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,   // very important for admin check
-    }
-  });
+res.cookie("token", token, {
+  httpOnly: true,
+  maxAge: 86400000,
+  secure: isProduction,                 // ❗ false in local
+  sameSite: isProduction ? "none" : "lax",  // ❗ important
+});
+res.json({
+  success: true,
+  message: "Login Successful",
+  user: {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  },
+  token   // 👈 ADD THIS LINE
+});
 
 };
 
