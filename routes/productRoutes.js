@@ -1,5 +1,4 @@
 import express from "express";
-
 import { isAuthenticated } from "../middleware/authMiddleware.js";
 import { isAdmin } from "../middleware/adminMiddleware.js";
 
@@ -7,6 +6,8 @@ import {
   addProduct,
   getProducts,
   getSingleProduct,
+  getCategories,
+  getProductsByCategory,
   updateProduct,
   deleteProduct,
   addReview
@@ -14,26 +15,34 @@ import {
 import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
+const optionalUpload = (req, res, next) => {
+  const contentType = req.headers["content-type"] || "";
+
+  if (contentType.startsWith("multipart/form-data")) {
+    return upload.fields([
+      { name: "images", maxCount: 10 },
+      { name: "thumbnails", maxCount: 3 },
+    ])(req, res, next);
+  }
+
+  next();
+};
 
 
-// ➕ CREATE PRODUCT (admin only)
 router.post(
   "/",
-  isAuthenticated,               // 🔐 check login
- isAdmin,
-  upload.fields([
-    { name: "images", maxCount: 10 },
-    { name: "thumbnails", maxCount: 3 },
-  ]),
+  isAuthenticated, 
+  isAdmin,
+  optionalUpload,
   addProduct
 );
 
 
-// 📄 GET ALL PRODUCTS (public)
+
+// 🏷️ GET CATEGORIES (public)
+router.get("/categories", getCategories);
+router.get("/category/:category", getProductsByCategory);
 router.get("/", getProducts);
-
-
-// 🔍 GET SINGLE PRODUCT (public)
 router.get("/:id", getSingleProduct);
 
 
@@ -41,19 +50,17 @@ router.get("/:id", getSingleProduct);
 router.put(
   "/:id",
   isAuthenticated,
-  upload.fields([
-    { name: "productImages", maxCount: 10 },
-    { name: "thumbnails", maxCount: 3 },
-  ]),
+  isAdmin,
+  optionalUpload,
   updateProduct
 );
 
 
-// ❌ DELETE PRODUCT (admin only)
-router.delete("/:id", isAuthenticated, deleteProduct);
+
+router.delete("/:id", isAuthenticated, isAdmin, deleteProduct);
 
 
-// ⭐ ADD REVIEW (logged-in user)
+
 router.post("/review", isAuthenticated, addReview);
 
 

@@ -7,6 +7,11 @@ import connectDB from "./config/db.js";
 import productRoutes from "./routes/productRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 
+import { isAuthenticated } from "./middleware/authMiddleware.js";
+import { isAdmin } from "./middleware/adminMiddleware.js";
+import upload from "./middleware/uploadMiddleware.js";
+import { addProduct } from "./controllers/productController.js";
+
 
 dotenv.config();
 
@@ -26,12 +31,25 @@ app.use(express.json());
 app.use(cookieParser());
 
 
-// Routes
+
 app.get("/", (req, res) => {
     res.send("Ethnikart Backend Running");
 });
 
 app.use("/api/products", productRoutes);
+
+// Legacy/alternate product create endpoint (supports existing clients calling /api/addProduct)
+app.post(
+  "/api/addProduct",
+  isAuthenticated,
+  isAdmin,
+  upload.fields([
+    { name: "images", maxCount: 10 },
+    { name: "thumbnails", maxCount: 3 },
+  ]),
+  addProduct
+);
+
 app.use("/api/auth", authRoutes);
 app.use("/uploads", express.static("uploads"));
 

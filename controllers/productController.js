@@ -1,28 +1,41 @@
 import Product from "../models/Product.js";
 
 
-// ➕ CREATE PRODUCT (Admin)
+
 export const addProduct = async (req, res) => {
   try {
     const { name, price, category, description, stock, variants } = req.body;
 
-    // get uploaded files
-    const productImages =
+    // allow images to be passed either via multipart upload (req.files)
+    // or via JSON body (e.g., `images: []` / `thumbnails: []`)
+    const productImagesFromFiles =
       req.files?.productImages?.map((file) => file.filename) || [];
-
-    const thumbnails =
+    const thumbnailsFromFiles =
       req.files?.thumbnails?.map((file) => file.filename) || [];
 
-    // parse variants
-    const parsedVariants = variants ? JSON.parse(variants) : [];
+    const productImages =
+      Array.isArray(req.body.images) && req.body.images.length
+        ? req.body.images
+        : productImagesFromFiles;
+    const thumbnails =
+      Array.isArray(req.body.thumbnails) && req.body.thumbnails.length
+        ? req.body.thumbnails
+        : thumbnailsFromFiles;
 
-    // validation
-    if (productImages.length === 0) {
+    // require at least one image + one thumbnail
+    if (!productImages.length || !thumbnails.length) {
       return res.status(400).json({
         success: false,
-        message: "At least one product image is required",
+        message: "Product must include at least one image and one thumbnail",
       });
     }
+
+    // parse variants (allow array or JSON string)
+    const parsedVariants = variants
+      ? typeof variants === "string"
+        ? JSON.parse(variants)
+        : variants
+      : [];
 
     const product = await Product.create({
       name,
@@ -52,7 +65,7 @@ export const addProduct = async (req, res) => {
 
 
 
-// 📄 GET ALL PRODUCTS
+
 export const getProducts = async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
@@ -71,9 +84,63 @@ export const getProducts = async (req, res) => {
   }
 };
 
+// 🏷️ GET CATEGORIES (from enum)
+export const getCategories = async (req, res) => {
+  try {
+    const categoryPath = Product.schema.path("category");
+    const categories = Array.isArray(categoryPath?.enumValues)
+      ? categoryPath.enumValues
+      : [];
+
+    res.status(200).json({
+      success: true,
+      categories,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// 🗂️ GET PRODUCTS BY CATEGORY
+export const getProductsByCategory = async (req, res) => {
+  try {
+    const { category } = req.params;
+
+    const categoryPath = Product.schema.path("category");
+    const allowedCategories = Array.isArray(categoryPath?.enumValues)
+      ? categoryPath.enumValues
+      : [];
+
+    if (!allowedCategories.includes(category)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid category",
+        allowed: allowedCategories,
+      });
+    }
+
+    const products = await Product.find({ category }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      category,
+      count: products.length,
+      products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 
-// 🔍 GET SINGLE PRODUCT
+
+
 export const getSingleProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate("reviews.user", "name email");
@@ -100,7 +167,7 @@ export const getSingleProduct = async (req, res) => {
 
 
 
-// ✏️ UPDATE PRODUCT
+
 export const updateProduct = async (req, res) => {
   try {
     let product = await Product.findById(req.params.id);
@@ -149,7 +216,7 @@ export const updateProduct = async (req, res) => {
 
 
 
-// ❌ DELETE PRODUCT
+
 export const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
